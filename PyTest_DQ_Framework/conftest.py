@@ -85,21 +85,21 @@ def nf3_visits(db_connection):
 
 # --- Parquet Output Fixtures ---
 @pytest.fixture(scope='module')
-def parquet_facility_name_min_time_spent(request):
+def parquet_facility_name_min_time_spent(request, parquet_reader):
     path = request.config.getoption("--parquet_path_facility_name_min_time_spent")
     if not os.path.exists(path):
         pytest.skip(f"Parquet file not found: {path}")
     return parquet_reader.read_parquet(path)
 
 @pytest.fixture(scope='module')
-def parquet_facility_type_avg_time_spent(request):
+def parquet_facility_type_avg_time_spent(request, parquet_reader):
     path = request.config.getoption("--parquet_path_facility_type_avg_time_spent")
     if not os.path.exists(path):
         pytest.skip(f"Parquet file not found: {path}")
     return parquet_reader.read_parquet(path)
 
 @pytest.fixture(scope='module')
-def parquet_patient_sum_treatment_cost(request):
+def parquet_patient_sum_treatment_cost(request, parquet_reader):
     path = request.config.getoption("--parquet_path_patient_sum_treatment_cost")
     if not os.path.exists(path):
         pytest.skip(f"Parquet file not found: {path}")
