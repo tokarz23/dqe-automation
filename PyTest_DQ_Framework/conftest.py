@@ -107,15 +107,15 @@ def parquet_patient_sum_treatment_cost(request):
     return parquet_reader.read_parquet(path)
 
 # --- Mapping Rules Fixture (if needed) ---
-@pytest.fixture(scope='session')
-def mapping_rules(request):
-    mapping_path = request.config.getoption("--mapping_path")
-    try:
-        with open(mapping_path, "r") as f:
-            mapping = yaml.safe_load(f)
-        return mapping
-    except Exception as e:
-        pytest.fail(f"Failed to load mapping rules: {e}")
+# @pytest.fixture(scope='session')
+# def mapping_rules(request):
+#     mapping_path = request.config.getoption("--mapping_path")
+#     try:
+#         with open(mapping_path, "r") as f:
+#             mapping = yaml.safe_load(f)
+#         return mapping
+#     except Exception as e:
+#         pytest.fail(f"Failed to load mapping rules: {e}")
 
 # --- DQ Library Fixture ---
 @pytest.fixture(scope='session')
