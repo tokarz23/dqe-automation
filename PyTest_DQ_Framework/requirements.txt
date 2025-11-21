@@ -4,3 +4,4 @@ pyarrow
 pytest
 pyyaml
 pytest-html
+yaml
