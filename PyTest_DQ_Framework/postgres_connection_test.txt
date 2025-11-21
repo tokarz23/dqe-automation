@@ -1,0 +1,18 @@
+import psycopg2
+conn = psycopg2.connect(
+    host="localhost",
+    port=5434,
+    user="myuser",
+    password="mypassword",
+    dbname="mydatabase"
+)
+print("Connected!")
+
+pytest tests -m "example" \
+  --db_host="localhost" --db_port="5434" --db_name="mydatabase" --db_user="myuser" --db_password="mypassword" \
+  --html=html_report/report_example.html
+
+/Users/tomasz_tokarzewski/Documents/DQE_repository/dqe-automation/PyTest DQ Framework
+
+podman cp jenkins:/parquet_data/facility_name_min_time_spent_per_visit_date /Users/tomasz_tokarzewski/Documents/DQE_repository/dqe-automation/PyTest DQ Framework/local_parquet_files
+podman cp jenkins:/parquet_data/facility_name_min_time_spent_per_visit_date '/Users/tomasz_tokarzewski/Documents/DQE_repository/dqe-automation/PyTest DQ Framework/local_parquet_files/'

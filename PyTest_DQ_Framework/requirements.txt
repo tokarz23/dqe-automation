@@ -1,0 +1,6 @@
+psycopg2-binary
+pandas
+pyarrow
+pytest
+pyyaml
+pytest-html

@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+    environment {
+        POSTGRES_SECRET = credentials('jenkins-postgres-credentials')
+    }
+    stages {
+        stage('Build Podman Image') {
+            steps {
+                sh 'podman build -t dq-tests .'
+            }
+        }
+        stage('Run PyTest DQ Checks in Podman') {
+            steps {
+                sh '''
+                podman run --rm \
+                  -e POSTGRES_SECRET=$POSTGRES_SECRET \
+                  -v "$PWD/PyTest DQ Framework/html_report:/app/html_report" \
+                  dq-tests \
+                  bash -c "pytest pytest_folder/tests --html=/app/html_report/index.html --self-contained-html"
+                '''
+            }
+        }
+        stage('Archive Test Report') {
+            steps {
+                archiveArtifacts artifacts: 'PyTest DQ Framework/html_report/**', allowEmptyArchive: true
+
+                publishHTML(target: [
+                    allowMissing: false,
+                    keepAll: true,
+                    reportDir: 'PyTest DQ Framework/html_report',
+                    reportFiles: 'index.html',
+                    reportName: 'HTML Test Report'
+                ])
+            }
+        }
+    }
+}
