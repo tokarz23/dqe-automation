@@ -53,7 +53,7 @@ pipeline {
                         --db_name="mydatabase" \
                         --db_user=$POSTGRES_SECRET_USR \
                         --db_password=$POSTGRES_SECRET_PSW \
-                        --html="PyTest DQ Framework/html_report/index.html" --self-contained-html
+                        --html="PyTest_DQ_Framework/html_report/index.html" --self-contained-html
                 '''
             }
         }
