@@ -2,6 +2,7 @@ pipeline {
     agent any
     environment {
         POSTGRES_SECRET = credentials('jenkins-postgres-credentials')
+        // Jenkins will automatically set POSTGRES_SECRET_USR and POSTGRES_SECRET_PSW
     }
     stages {
         stage('Build Podman Image') {
@@ -13,10 +14,17 @@ pipeline {
             steps {
                 sh '''
                 podman run --rm \
-                  -e POSTGRES_SECRET=$POSTGRES_SECRET \
+                  -e POSTGRES_SECRET_USR=$POSTGRES_SECRET_USR \
+                  -e POSTGRES_SECRET_PSW=$POSTGRES_SECRET_PSW \
                   -v "$PWD/PyTest DQ Framework/html_report:/app/html_report" \
                   dq-tests \
-                  bash -c "pytest pytest_folder/tests --html=/app/html_report/index.html --self-contained-html"
+                  bash -c "pytest pytest_folder/tests -m 'parquet_data' \
+                    --db_host='postgres' \
+                    --db_port='5432' \
+                    --db_name='mydatabase' \
+                    --db_user=$POSTGRES_SECRET_USR \
+                    --db_password=$POSTGRES_SECRET_PSW \
+                    --html=/app/html_report/index.html --self-contained-html"
                 '''
             }
         }
