@@ -47,13 +47,13 @@ pipeline {
                 sh '''
                     . venv/bin/activate
                     cd "PyTest_DQ_Framework"
-                    pytest "PyTest_DQ_Framework/tests" -m "parquet_data" \
+                    pytest tests -m "parquet_data" \
                         --db_host="postgres" \
                         --db_port="5432" \
                         --db_name="mydatabase" \
                         --db_user=$POSTGRES_SECRET_USR \
                         --db_password=$POSTGRES_SECRET_PSW \
-                        --html="PyTest_DQ_Framework/html_report/index.html" --self-contained-html
+                        --html=html_report/index.html --self-contained-html
                 '''
             }
         }
