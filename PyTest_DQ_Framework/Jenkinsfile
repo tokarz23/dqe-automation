@@ -46,7 +46,7 @@ pipeline {
             steps {
                 sh '''
                     . venv/bin/activate
-                    cd "PyTest DQ Framework"
+                    cd "PyTest_DQ_Framework"
                     pytest "PyTest DQ Framework/tests" -m "parquet_data" \
                         --db_host="postgres" \
                         --db_port="5432" \
