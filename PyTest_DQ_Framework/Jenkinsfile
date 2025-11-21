@@ -1,30 +1,59 @@
 pipeline {
     agent any
     environment {
+        // This assumes your Jenkins credential is of type "Username with password"
         POSTGRES_SECRET = credentials('jenkins-postgres-credentials')
         // Jenkins will automatically set POSTGRES_SECRET_USR and POSTGRES_SECRET_PSW
     }
     stages {
-        stage('Build Podman Image') {
+        stage('Update Packages') {
             steps {
-                sh 'podman build -t dq-tests .'
+                sh 'apt-get update'
+                sh 'apt-get install -y libpq-dev'
             }
         }
-        stage('Run PyTest DQ Checks in Podman') {
+        stage('Install Python') {
+            steps {
+                sh 'apt-get install -y python3 python3-pip python3-venv'
+            }
+        }
+        stage('Clone Repository') {
+            steps {
+                git branch: 'main', url: 'https://github.com/tokarz23/dqe-automation'
+            }
+        }
+        stage('Install Dependencies') {
             steps {
                 sh '''
-                podman run --rm \
-                  -e POSTGRES_SECRET_USR=$POSTGRES_SECRET_USR \
-                  -e POSTGRES_SECRET_PSW=$POSTGRES_SECRET_PSW \
-                  -v "$PWD/PyTest DQ Framework/html_report:/app/html_report" \
-                  dq-tests \
-                  bash -c "pytest pytest_folder/tests -m 'parquet_data' \
-                    --db_host='postgres' \
-                    --db_port='5432' \
-                    --db_name='mydatabase' \
-                    --db_user=$POSTGRES_SECRET_USR \
-                    --db_password=$POSTGRES_SECRET_PSW \
-                    --html=/app/html_report/index.html --self-contained-html"
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r data_dev/requirements.txt
+                    pip install pytest pytest-html
+                '''
+            }
+        }
+        stage('Run main') {
+            steps {
+                sh '''
+                    . venv/bin/activate
+                    export PYTHONPATH=$WORKSPACE
+                    python data_dev/main.py
+                '''
+            }
+        }
+        stage('Run PyTest DQ Checks') {
+            steps {
+                sh '''
+                    . venv/bin/activate
+                    mkdir -p "PyTest DQ Framework/html_report"
+                    pytest "PyTest DQ Framework/tests" -m "parquet_data" \
+                        --db_host="postgres" \
+                        --db_port="5432" \
+                        --db_name="mydatabase" \
+                        --db_user=$POSTGRES_SECRET_USR \
+                        --db_password=$POSTGRES_SECRET_PSW \
+                        --html="PyTest DQ Framework/html_report/index.html" --self-contained-html
                 '''
             }
         }
@@ -40,6 +69,18 @@ pipeline {
                     reportName: 'HTML Test Report'
                 ])
             }
+        }
+    }
+    post {
+        always {
+            echo 'Pipeline execution completed.'
+        }
+
+        success {
+            echo 'Pipeline executed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed. Please check the logs for details.'
         }
     }
 }
