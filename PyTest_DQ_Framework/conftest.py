@@ -4,7 +4,6 @@ import pandas as pd
 from src.connectors.postgres.postgres_connector import PostgresConnectorContextManager
 from src.data_quality.data_quality_validation_library import DataQualityLibrary
 from src.connectors.file_system.parquet_reader import ParquetReader
-import yaml
 
 def pytest_addoption(parser):
     parser.addoption("--db_host", action="store", default=os.environ.get("DB_HOST", "localhost"), help="Database host")
