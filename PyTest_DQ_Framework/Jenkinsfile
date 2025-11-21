@@ -59,12 +59,12 @@ pipeline {
         }
         stage('Archive Test Report') {
             steps {
-                archiveArtifacts artifacts: 'PyTest DQ Framework/html_report/**', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'PyTest_DQ_Framework/html_report/**', allowEmptyArchive: true
 
                 publishHTML(target: [
                     allowMissing: false,
                     keepAll: true,
-                    reportDir: 'PyTest DQ Framework/html_report',
+                    reportDir: 'PyTest_DQ_Framework/html_report',
                     reportFiles: 'index.html',
                     reportName: 'HTML Test Report'
                 ])
