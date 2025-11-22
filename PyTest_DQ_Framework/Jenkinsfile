@@ -1,5 +1,3 @@
-import jenkins.model.Jenkins
-
 pipeline {
     agent any
 
@@ -30,7 +28,6 @@ pipeline {
                     python3 -m venv venv
                     . venv/bin/activate
                     pip install --upgrade pip
-                    pip install -r data_dev/requirements.txt
                     pip install -r PyTest_DQ_Framework/requirements.txt
                 '''
             }
@@ -46,7 +43,7 @@ pipeline {
             }
         }
 
-        stage('Run PyTest DQ checks (parquet_data ∪ dq)') {
+        stage('Run PyTest DQ checks (parquet_data and dq marks)') {
             steps {
                 script {
                     sh '''
@@ -93,8 +90,7 @@ pipeline {
                     if (fileExists(reportFile)) {
                         archiveArtifacts artifacts: "${reportDir}/**", allowEmptyArchive: false, fingerprint: true
 
-                        def htmlPublisherPlugin = Jenkins.instance.pluginManager.getPlugin('htmlpublisher')
-                        if (htmlPublisherPlugin) {
+                        try {
                             publishHTML(target: [
                                 allowMissing: false,
                                 keepAll: true,
@@ -102,7 +98,7 @@ pipeline {
                                 reportFiles: 'index.html',
                                 reportName: 'HTML Test Report'
                             ])
-                        } else {
+                        } catch (MissingMethodException | NoSuchMethodError err) {
                             echo 'HTML Publisher plugin not installed; skipping publishHTML step.'
                         }
                     } else {
