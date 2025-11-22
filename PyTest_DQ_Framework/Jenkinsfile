@@ -1,9 +1,11 @@
+import jenkins.model.Jenkins
+
 pipeline {
     agent any
 
     environment {
         POSTGRES_SECRET = credentials('jenkins-postgres-credentials')
-        // Jenkins exposes POSTGRES_SECRET_USR / POSTGRES_SECRET_PSW implicitly
+        // Jenkins exposes POSTGRES_SECRET_USR / POSTGRES_SECRET_PSW
     }
 
     stages {
@@ -47,7 +49,6 @@ pipeline {
         stage('Run PyTest DQ checks (parquet_data ∪ dq)') {
             steps {
                 script {
-                    // ensure the report folder exists
                     sh '''
                         . venv/bin/activate
                         export PYTHONPATH=$WORKSPACE
@@ -55,7 +56,7 @@ pipeline {
                         mkdir -p html_report
                     '''
 
-                    int status = sh(
+                    int pytestStatus = sh(
                         script: '''
                             . venv/bin/activate
                             export PYTHONPATH=$WORKSPACE
@@ -71,13 +72,13 @@ pipeline {
                         returnStatus: true
                     )
 
-                    if (status == 0) {
+                    if (pytestStatus == 0) {
                         echo 'PyTest completed successfully.'
-                    } else if (status == 1) {
+                    } else if (pytestStatus == 1) {
                         currentBuild.result = 'UNSTABLE'
-                        echo "PyTest reported data-quality failures (exit code ${status}). Build marked UNSTABLE."
+                        echo "PyTest reported data-quality failures (exit code ${pytestStatus}). Build marked UNSTABLE."
                     } else {
-                        error("PyTest exited with code ${status}; treating as infrastructure/configuration error.")
+                        error("PyTest exited with code ${pytestStatus}; treating as infrastructure/configuration error.")
                     }
                 }
             }
@@ -86,16 +87,24 @@ pipeline {
         stage('Archive HTML report') {
             steps {
                 script {
-                    def reportPath = 'PyTest_DQ_Framework/html_report/index.html'
-                    if (fileExists(reportPath)) {
-                        archiveArtifacts artifacts: 'PyTest_DQ_Framework/html_report/**', allowEmptyArchive: false, fingerprint: true
-                        publishHTML(target: [
-                            allowMissing: false,
-                            keepAll: true,
-                            reportDir: 'PyTest_DQ_Framework/html_report',
-                            reportFiles: 'index.html',
-                            reportName: 'HTML Test Report'
-                        ])
+                    def reportDir  = 'PyTest_DQ_Framework/html_report'
+                    def reportFile = "${reportDir}/index.html"
+
+                    if (fileExists(reportFile)) {
+                        archiveArtifacts artifacts: "${reportDir}/**", allowEmptyArchive: false, fingerprint: true
+
+                        def htmlPublisherPlugin = Jenkins.instance.pluginManager.getPlugin('htmlpublisher')
+                        if (htmlPublisherPlugin) {
+                            publishHTML(target: [
+                                allowMissing: false,
+                                keepAll: true,
+                                reportDir: reportDir,
+                                reportFiles: 'index.html',
+                                reportName: 'HTML Test Report'
+                            ])
+                        } else {
+                            echo 'HTML Publisher plugin not installed; skipping publishHTML step.'
+                        }
                     } else {
                         echo 'HTML report not found; skipping archive/publish.'
                     }
