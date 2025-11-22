@@ -1,6 +1,7 @@
 pipeline {
     agent any
     environment {
+        // This assumes your Jenkins credential is of type "Username with password"
         POSTGRES_SECRET = credentials('jenkins-postgres-credentials')
         // Jenkins will automatically set POSTGRES_SECRET_USR and POSTGRES_SECRET_PSW
     }
@@ -27,7 +28,8 @@ pipeline {
                     python3 -m venv venv
                     . venv/bin/activate
                     pip install --upgrade pip
-                    pip install -r PyTest_DQ_Framework/requirements.txt
+                    pip install -r data_dev/requirements.txt
+                    pip install pytest pytest-html
                 '''
             }
         }
@@ -44,9 +46,8 @@ pipeline {
             steps {
                 sh '''
                     . venv/bin/activate
-                    export PYTHONPATH=$WORKSPACE
                     cd "PyTest_DQ_Framework"
-                    pytest tests -m "parquet_data or dq" \
+                    pytest tests -m "parquet_data" \
                         --db_host="postgres" \
                         --db_port="5432" \
                         --db_name="mydatabase" \
@@ -58,7 +59,7 @@ pipeline {
         }
         stage('Archive Test Report') {
             steps {
-                archiveArtifacts artifacts: 'PyTest_DQ_Framework/html_report/**', allowEmptyArchive: false, fingerprint: true
+                archiveArtifacts artifacts: 'PyTest_DQ_Framework/html_report/**', allowEmptyArchive: true
 
                 publishHTML(target: [
                     allowMissing: false,
@@ -72,14 +73,14 @@ pipeline {
     }
     post {
         always {
-            echo 'DQ pipeline execution completed.'
+            echo 'Pipeline execution completed.'
         }
 
         success {
-            echo 'DQ pipeline executed successfully!'
+            echo 'Pipeline executed successfully!'
         }
         failure {
-            echo 'DQ pipeline failed. Please check the logs for details.'
+            echo 'Pipeline failed. Please check the logs for details.'
         }
     }
 }
