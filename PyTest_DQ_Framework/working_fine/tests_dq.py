@@ -7,52 +7,6 @@ Author(s): Your Name
 import pytest
 import pandas as pd
 
-# # --- Fixtures ---
-
-# @pytest.fixture(scope='module')
-# def src_facilities(db_connection):
-#     query = "SELECT * FROM src_generated_facilities"
-#     return db_connection.get_data_sql(query)
-
-# @pytest.fixture(scope='module')
-# def src_patients(db_connection):
-#     query = "SELECT * FROM src_generated_patients"
-#     return db_connection.get_data_sql(query)
-
-# @pytest.fixture(scope='module')
-# def src_visits(db_connection):
-#     query = "SELECT * FROM src_generated_visits"
-#     return db_connection.get_data_sql(query)
-
-# @pytest.fixture(scope='module')
-# def nf3_facilities(db_connection):
-#     query = "SELECT * FROM facilities"
-#     return db_connection.get_data_sql(query)
-
-# @pytest.fixture(scope='module')
-# def nf3_patients(db_connection):
-#     query = "SELECT * FROM patients"
-#     return db_connection.get_data_sql(query)
-
-# @pytest.fixture(scope='module')
-# def nf3_visits(db_connection):
-#     query = "SELECT * FROM visits"
-#     return db_connection.get_data_sql(query)
-
-# @pytest.fixture(scope='module')
-# def parquet_facility_name_min_time_spent():
-#     path = '/parquet_data/facility_name_min_time_spent_per_visit_date'
-#     return pd.read_parquet(path)
-
-# @pytest.fixture(scope='module')
-# def parquet_facility_type_avg_time_spent():
-#     path = '/parquet_data/facility_type_avg_time_spent_per_visit_date'
-#     return pd.read_parquet(path)
-
-# @pytest.fixture(scope='module')
-# def parquet_patient_sum_treatment_cost():
-#     path = '/parquet_data/patient_sum_treatment_cost_per_facility_type'
-#     return pd.read_parquet(path)
 
 # --- Data Quality Tests ---
 

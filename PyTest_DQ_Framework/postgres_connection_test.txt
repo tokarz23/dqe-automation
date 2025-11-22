@@ -8,6 +8,20 @@ conn = psycopg2.connect(
 )
 print("Connected!")
 
+
+dqe-automation/PyTest_DQ_Framework
+
+pytest tests -m "parquet_data" \                             
+    --db_host="localhost" \
+    --db_port="5432" \
+    --db_name="mydatabase" \
+    --db_user="myuser" \
+    --db_password="mypassword" \
+    --html=html_report/report.html
+
+
+
+
 pytest tests -m "example" \
   --db_host="localhost" --db_port="5434" --db_name="mydatabase" --db_user="myuser" --db_password="mypassword" \
   --html=html_report/report_example.html
