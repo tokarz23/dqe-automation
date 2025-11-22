@@ -31,29 +31,28 @@ pipeline {
                 '''
             }
         }
-        stage('Run main') {
-            steps {
-                sh '''
-                    . venv/bin/activate
-                    export PYTHONPATH=$WORKSPACE
-                    python data_dev/main.py
-                '''
-            }
-        }
         stage('Run PyTest DQ Checks') {
             steps {
                 sh '''
                     . venv/bin/activate
                     export PYTHONPATH=$WORKSPACE
                     cd "PyTest_DQ_Framework"
-                    pytest tests -m "parquet_data or dq" \
-                        --db_host="postgres" \
-                        --db_port="5432" \
-                        --db_name="mydatabase" \
-                        --db_user=$POSTGRES_SECRET_USR \
-                        --db_password=$POSTGRES_SECRET_PSW \
-                        --html=html_report/index.html --self-contained-html
+                    mkdir -p html_report
                 '''
+                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                    sh '''
+                        . venv/bin/activate
+                        export PYTHONPATH=$WORKSPACE
+                        cd "PyTest_DQ_Framework"
+                        pytest tests -m "parquet_data or dq" \
+                            --db_host="postgres" \
+                            --db_port="5432" \
+                            --db_name="mydatabase" \
+                            --db_user=$POSTGRES_SECRET_USR \
+                            --db_password=$POSTGRES_SECRET_PSW \
+                            --html=html_report/index.html --self-contained-html
+                    '''
+                }
             }
         }
         stage('Archive Test Report') {
