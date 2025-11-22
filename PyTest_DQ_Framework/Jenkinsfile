@@ -1,84 +1,121 @@
 pipeline {
     agent any
+
     environment {
         POSTGRES_SECRET = credentials('jenkins-postgres-credentials')
-        // Jenkins will automatically set POSTGRES_SECRET_USR and POSTGRES_SECRET_PSW
+        // Jenkins exposes POSTGRES_SECRET_USR / POSTGRES_SECRET_PSW implicitly
     }
+
     stages {
-        stage('Update Packages') {
+        stage('System packages') {
             steps {
-                sh 'apt-get update'
-                sh 'apt-get install -y libpq-dev'
+                sh '''
+                    apt-get update
+                    apt-get install -y libpq-dev python3 python3-pip python3-venv
+                '''
             }
         }
-        stage('Install Python') {
-            steps {
-                sh 'apt-get install -y python3 python3-pip python3-venv'
-            }
-        }
-        stage('Clone Repository') {
+
+        stage('Clone repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/tokarz23/dqe-automation'
             }
         }
-        stage('Install Dependencies') {
+
+        stage('Install dependencies') {
             steps {
                 sh '''
                     python3 -m venv venv
                     . venv/bin/activate
                     pip install --upgrade pip
+                    pip install -r data_dev/requirements.txt
                     pip install -r PyTest_DQ_Framework/requirements.txt
                 '''
             }
         }
-        stage('Run PyTest DQ Checks - tests with parquet_data and dq marks only') {
+
+        stage('Generate latest parquet data') {
             steps {
                 sh '''
                     . venv/bin/activate
                     export PYTHONPATH=$WORKSPACE
-                    cd "PyTest_DQ_Framework"
-                    mkdir -p html_report
+                    python data_dev/main.py
                 '''
-                catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+            }
+        }
+
+        stage('Run PyTest DQ checks (parquet_data ∪ dq)') {
+            steps {
+                script {
+                    // ensure the report folder exists
                     sh '''
                         . venv/bin/activate
                         export PYTHONPATH=$WORKSPACE
-                        cd "PyTest_DQ_Framework"
-                        pytest tests -m "parquet_data or dq" \
-                            --db_host="postgres" \
-                            --db_port="5432" \
-                            --db_name="mydatabase" \
-                            --db_user=$POSTGRES_SECRET_USR \
-                            --db_password=$POSTGRES_SECRET_PSW \
-                            --html=html_report/index.html --self-contained-html
+                        cd PyTest_DQ_Framework
+                        mkdir -p html_report
                     '''
+
+                    int status = sh(
+                        script: '''
+                            . venv/bin/activate
+                            export PYTHONPATH=$WORKSPACE
+                            cd PyTest_DQ_Framework
+                            pytest tests -m "parquet_data or dq" \
+                                --db_host="postgres" \
+                                --db_port="5432" \
+                                --db_name="mydatabase" \
+                                --db_user=$POSTGRES_SECRET_USR \
+                                --db_password=$POSTGRES_SECRET_PSW \
+                                --html=html_report/index.html --self-contained-html
+                        ''',
+                        returnStatus: true
+                    )
+
+                    if (status == 0) {
+                        echo 'PyTest completed successfully.'
+                    } else if (status == 1) {
+                        currentBuild.result = 'UNSTABLE'
+                        echo "PyTest reported data-quality failures (exit code ${status}). Build marked UNSTABLE."
+                    } else {
+                        error("PyTest exited with code ${status}; treating as infrastructure/configuration error.")
+                    }
                 }
             }
         }
-        stage('Archive Test Report') {
-            steps {
-                archiveArtifacts artifacts: 'PyTest_DQ_Framework/html_report/**', allowEmptyArchive: false, fingerprint: true
 
-                publishHTML(target: [
-                    allowMissing: false,
-                    keepAll: true,
-                    reportDir: 'PyTest_DQ_Framework/html_report',
-                    reportFiles: 'index.html',
-                    reportName: 'HTML Test Report'
-                ])
+        stage('Archive HTML report') {
+            steps {
+                script {
+                    def reportPath = 'PyTest_DQ_Framework/html_report/index.html'
+                    if (fileExists(reportPath)) {
+                        archiveArtifacts artifacts: 'PyTest_DQ_Framework/html_report/**', allowEmptyArchive: false, fingerprint: true
+                        publishHTML(target: [
+                            allowMissing: false,
+                            keepAll: true,
+                            reportDir: 'PyTest_DQ_Framework/html_report',
+                            reportFiles: 'index.html',
+                            reportName: 'HTML Test Report'
+                        ])
+                    } else {
+                        echo 'HTML report not found; skipping archive/publish.'
+                    }
+                }
             }
         }
     }
+
     post {
         always {
             echo 'DQ pipeline execution completed.'
         }
-
         success {
-            echo 'DQ pipeline executed successfully!'
+            echo 'DQ pipeline executed successfully.'
+        }
+        unstable {
+            echo 'DQ pipeline completed with data-quality failures (UNSTABLE).'
         }
         failure {
-            echo 'DQ pipeline failed. Please check the logs for details.'
+            echo 'DQ pipeline failed due to infrastructure or configuration issues.'
         }
     }
 }
