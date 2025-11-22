@@ -31,7 +31,7 @@ pipeline {
                 '''
             }
         }
-        stage('Run PyTest DQ Checks') {
+        stage('Run PyTest DQ Checks - tests with parquet_data and dq marks only') {
             steps {
                 sh '''
                     . venv/bin/activate
