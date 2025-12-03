@@ -41,7 +41,7 @@ class SeleniumWebDriverContextManager:
             service = EdgeService(executable_path=self.driver_path) if self.driver_path else EdgeService()
             self.driver = webdriver.Edge(service=service, options=opts_edge)
         else:
-            raise ValueError(f"Provided browser not supported: {self.browser}")
+            raise ValueError(f"Provided browser is not supported: {self.browser}")
         return self.driver
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -81,7 +81,6 @@ def extract_svg_table(driver, html_path, output_dir=".", num_columns=3):
         # Transpose columns to rows
         rows = list(zip(*columns))
 
-        # Write to CSV
         with open(table_csv_path, "w", newline='') as f:
             writer = csv.writer(f)
             writer.writerow(headers)
@@ -101,7 +100,7 @@ def extract_doughnut_chart(driver, html_path, output_dir="."):
     try:
         # Find all doughnut chart segments
         paths = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "path.surface")))
-        # Screenshot the whole page (or use element screenshot if supported)
+        # Screenshot
         driver.save_screenshot(os.path.join(output_dir, f"screenshot{screenshot_idx}.png"))
         # Extract chart data
         chart_data = []
